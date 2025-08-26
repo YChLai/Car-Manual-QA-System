@@ -1,13 +1,12 @@
-from langchain_community.document_loaders import UnstructuredFileLoader
-from langchain_core.stores import InMemoryStore
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_experimental.text_splitter import SemanticChunker
-import uuid
-from langchain_community.vectorstores import FAISS
-from langchain.retrievers import ParentDocumentRetriever
 import pickle
+import uuid
 
+from langchain_community.document_loaders import UnstructuredFileLoader
+from langchain_community.vectorstores import Chroma
+from langchain_core.stores import InMemoryStore
+from langchain_experimental.text_splitter import SemanticChunker
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 file_paths=["./model_3.pdf","./model_y.pdf","./model_s.pdf"]
 all_files=[]
@@ -60,16 +59,18 @@ with open("./parent_store_data.pkl", "wb") as f:
     # 我们把父文档块和ID都保存在一个元组里
     pickle.dump((parent_chunks, doc_ids), f)
 
-child_vectorstore=FAISS.from_documents(
-    child_chunks,
-    embedding=embedding
+
+vectorstore_path = "./chroma_db"
+
+
+child_vectorstore = Chroma.from_documents(
+    documents=child_chunks,
+    embedding=embedding,
+    persist_directory=vectorstore_path
 )
-
-vectorstore_path = "./faiss_index"
-child_vectorstore.save_local(vectorstore_path)
-
-
-
+print(f"\n--- 索引保存成功！---")
+print(f"父文档库已保存在: ./docstore")
+print(f"子文档向量索引已保存在: {vectorstore_path}")
 
 
 
