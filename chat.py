@@ -157,3 +157,4 @@ print(f"用户问题: {query}")
 answer = rag_chain.invoke(query)
 print("\n--- AI回答 ---\n")
 print(answer)
+
