@@ -2,7 +2,9 @@ import os
 import pickle
 import warnings
 
+from langchain.chains.query_constructor import load_query_constructor_runnable
 from langchain_community.chat_models import ChatZhipuAI
+from langchain_community.query_constructors.chroma import ChromaTranslator
 from langchain_community.vectorstores import Chroma
 from langchain_core.output_parsers import StrOutputParser, JsonOutputParser
 from langchain_core.prompts import ChatPromptTemplate
@@ -11,6 +13,7 @@ from langchain_core.stores import InMemoryStore
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain.retrievers.self_query.base import SelfQueryRetriever
 from langchain.chains.query_constructor.schema import AttributeInfo
+from langchain_core.structured_query import Comparator
 
 warnings.filterwarnings('ignore', category=UserWarning)
 warnings.filterwarnings('ignore', category=DeprecationWarning)
@@ -19,7 +22,7 @@ print(">>> 正在初始化核心组件...")
 
 ZHIPU_API_KEY = os.getenv("ZHIPU_API_KEY")
 EMBEDDING_MODEL_NAME = "BAAI/bge-m3"
-VECTORSTORE_PATH = "./chroma_db"
+VECTORSTORE_PATH = "../Car-Manual/chroma_db"
 PARENT_STORE_PATH = "./parent_store_data.pkl"
 
 llm = ChatZhipuAI(model="glm-4", api_key=ZHIPU_API_KEY)
@@ -83,15 +86,16 @@ document_content_description = "汽车的用户手册，包含了不同型号汽
 metadata_field_info = [
     AttributeInfo(
         name="source",
-        description='文档的来源文件名，代表了汽车的型号。可选值为 ["./model_3.pdf", "./model_y.pdf", "./model_s.pdf"]',
+        description='文档的来源文件名，代表了汽车的型号。可选值为 ["./model_3.pdf", ./model_x.pdf","./model_y.pdf", "./model_s.pdf"]',
         type="string",
     )
 ]
+
 self_query_retriever = SelfQueryRetriever.from_llm(
     llm=llm,
-    vectorstore=child_vectorstore,
     document_contents=document_content_description,
     metadata_field_info=metadata_field_info,
+    vectorstore=child_vectorstore,
     verbose=True,
 )
 
@@ -151,7 +155,7 @@ rag_chain = (
 )
 
 print("\n--- 系统准备就绪！---\n")
-query = "Model Y、3、S的辅助驾驶有什么区别？"
+query = "Are there something different from Model 3 ,Model X， Model Y and Model S in auto driving？If you can't fine any context in your vectorstore, don't answer me.If you can,show me the context"
 print(f"用户问题: {query}")
 
 answer = rag_chain.invoke(query)

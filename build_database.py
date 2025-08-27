@@ -8,7 +8,7 @@ from langchain_experimental.text_splitter import SemanticChunker
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-file_paths=["./model_3.pdf","./model_y.pdf","./model_s.pdf"]
+file_paths=["./model_3.pdf","./model_x.pdf","./model_y.pdf","./model_s.pdf"]
 all_files=[]
 for file_path in file_paths:
     loader = UnstructuredFileLoader(file_path)
@@ -58,7 +58,7 @@ with open("./parent_store_data.pkl", "wb") as f:
     pickle.dump((parent_chunks, doc_ids), f)
 
 
-vectorstore_path = "./chroma_db"
+vectorstore_path = "../Car-Manual/chroma_db"
 
 
 child_vectorstore = Chroma.from_documents(
