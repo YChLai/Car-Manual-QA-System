@@ -2,9 +2,7 @@ import os
 import pickle
 import warnings
 
-from langchain.chains.query_constructor import load_query_constructor_runnable
 from langchain_community.chat_models import ChatZhipuAI
-from langchain_community.query_constructors.chroma import ChromaTranslator
 from langchain_community.vectorstores import Chroma
 from langchain_core.output_parsers import StrOutputParser, JsonOutputParser
 from langchain_core.prompts import ChatPromptTemplate
@@ -13,7 +11,7 @@ from langchain_core.stores import InMemoryStore
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain.retrievers.self_query.base import SelfQueryRetriever
 from langchain.chains.query_constructor.schema import AttributeInfo
-from langchain_core.structured_query import Comparator
+from langchain.chains.query_constructor.base import Comparator
 
 warnings.filterwarnings('ignore', category=UserWarning)
 warnings.filterwarnings('ignore', category=DeprecationWarning)
@@ -87,15 +85,26 @@ metadata_field_info = [
     AttributeInfo(
         name="source",
         description='文档的来源文件名，代表了汽车的型号。可选值为 ["./model_3.pdf", ./model_x.pdf","./model_y.pdf", "./model_s.pdf"]',
-        type="string",
+        type="List[string]",
     )
 ]
 
+# 允许的比较符列表
+allowed_comparators = [
+    Comparator.EQ,
+    Comparator.NE,
+    Comparator.GT,
+    Comparator.GTE,
+    Comparator.LT,
+    Comparator.LTE,
+    Comparator.IN,  # <--- 将 IN 添加到白名单
+]
 self_query_retriever = SelfQueryRetriever.from_llm(
     llm=llm,
     document_contents=document_content_description,
     metadata_field_info=metadata_field_info,
     vectorstore=child_vectorstore,
+    allowed_comparators=allowed_comparators, # <--- 在这里传入
     verbose=True,
 )
 
@@ -155,7 +164,7 @@ rag_chain = (
 )
 
 print("\n--- 系统准备就绪！---\n")
-query = "Are there something different from Model 3 ,Model X， Model Y and Model S in auto driving？If you can't fine any context in your vectorstore, don't answer me.If you can,show me the context"
+query = "Model 3,Model X,Model Y,Model S的智能驾驶分别是什么样的?"
 print(f"用户问题: {query}")
 
 answer = rag_chain.invoke(query)
