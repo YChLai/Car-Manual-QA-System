@@ -17,7 +17,7 @@ for file_path in file_paths:
 
 print(f"所有文档加载完成，共 {len(all_files)} 个初始文档块。")
 
-print("\n>>> 正在进行第一阶段：结构化分割（父文档）...")
+print("\n>>> 分割父文档...")
 
 parent_splitter=RecursiveCharacterTextSplitter(
     chunk_size=2000,
@@ -28,15 +28,13 @@ parent_chunks=parent_splitter.split_documents(all_files)
 #给每个父文档一个唯一的ID
 doc_ids = [str(uuid.uuid4()) for _ in parent_chunks]
 
-print("\n>>> 正在进行第二阶段：初始化嵌入模型...")
-
 embedding=HuggingFaceEmbeddings(model_name="BAAI/bge-m3")
 child_splitter=SemanticChunker(
     embeddings=embedding,
     breakpoint_threshold_type="percentile"
 )
 
-print("\n>>> 正在进行第三阶段：语义分割子文档...")
+print("\n>>> 分割子文档...")
 
 #把每个父文档再次按语义切割成子文档，并给子文档绑定父文档id
 child_chunks=[]
