@@ -1,0 +1,23 @@
+# 虚拟环境文件夹
+.venv/
+venv/
+env/
+
+# Python 缓存文件
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# IDE 和操作系统文件
+.idea/
+.vscode/
+*.DS_Store
+
+# 我们生成的数据库文件 (非常重要！)
+/faiss_index/
+/docstore/
+/parent_store_data.pkl
+
+# 敏感信息文件
+.env
