@@ -12,14 +12,24 @@ from langchain_core.runnables import RunnableLambda, RunnablePassthrough
 
 import utils
 
+REPHRASE_QUESTION_SYSTEM_PROMPT = """根据一段对话历史和用户提出的后续问题，
+将后续问题改写成一个独立的、完整的、无需上下文就能理解的新问题。
+如果后续问题本身已经是一个独立的问题，则无需改写，直接返回原问题即可。
+"""
+
+rephrase_question_prompt = ChatPromptTemplate.from_messages([
+    ("system", REPHRASE_QUESTION_SYSTEM_PROMPT),
+    MessagesPlaceholder(variable_name="chat_history"),
+    ("human", "{question}"),
+])
 
 def create_rag_fusion_chain(llm, vectorstore, parent_store):
     """创建并返回完整的RAG Fusion链"""
 
     document_content_description = (
         "这是一系列关于不同型号汽车的用户手册。"
-        "你只能使用 'source' 这一个元数据字段进行过滤。"
-        "绝对不允许编造或使用 'source' 以外的任何其他字段进行过滤。"
+        "进行元数据过滤时，你**唯一**可以使用的字段是 'source'。"
+        "这是一个****绝对的规则****，**严禁使用、创造或联想任何 'source' 以外的字段进行过滤**。"
     )
     metadata_field_info = [
         AttributeInfo(
@@ -127,14 +137,18 @@ def create_rag_fusion_chain(llm, vectorstore, parent_store):
         HumanMessagePromptTemplate.from_template("用户问题: {question}")
     ])
 
+    rephrase_question_chain = rephrase_question_prompt | llm | StrOutputParser()
     get_parent_docs_with_store = RunnableLambda(lambda docs: utils.get_parent_docs(docs, parent_store))
     base_retriever_chain = self_query_retriever | get_parent_docs_with_store
 
     rag_fusion_chain = (
-
             RunnablePassthrough.assign(
+                standalone_question=rephrase_question_chain
+            )
+
+            | RunnablePassthrough.assign(
                 generated_queries=(
-                        (lambda x: {"original_query": x["question"], "num_queries": x["num_queries"]}) | generate_queries_chain
+                        (lambda x: {"original_query": x["standalone_question"], "num_queries": x["num_queries"]}) | generate_queries_chain
                 )
             )
 
